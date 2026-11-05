@@ -1,0 +1,17 @@
+.DS_Store
+
+# Xcode
+ios/**/xcuserdata/
+ios/**/*.xcworkspace/xcuserdata/
+ios/DerivedData/
+ios/build/
+*.xcresult
+
+# Python (icon generator)
+__pycache__/
+
+# Local secrets: never commit
+*.env
+.env*
+*API_key*
+*api_key*

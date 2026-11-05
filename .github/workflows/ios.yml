@@ -1,0 +1,53 @@
+name: iOS build and tests
+
+# Compiles the app and its unit tests on a GitHub macOS runner, then runs the tests on a
+# simulator. No signing: it never produces a phone build, it only proves the code builds.
+on:
+  push:
+    branches: ['claude/**', 'main']
+    paths: ['ios/**', '.github/workflows/ios.yml']
+  pull_request:
+    paths: ['ios/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Build and run the unit tests on a simulator
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode on this runner
+        run: xcodebuild -version
+
+      - name: Pick a simulator
+        id: sim
+        run: |
+          xcrun simctl list devices available | grep iPhone || true
+          name=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | sed 's/ *$//')
+          echo "Using: $name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        run: |
+          set +e
+          xcodebuild test \
+            -project ios/LaBatalla.xcodeproj -scheme LaBatalla \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY= > xcodebuild.log 2>&1
+          status=$?
+          echo "xcodebuild exit status: $status"
+          grep -E 'error:|Testing failed|Test Suite|Executed|Test run|passed|failed|BUILD|TEST' xcodebuild.log | tail -n 200
+          exit $status
+
+      - name: Keep the log and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log-and-results
+          path: |
+            xcodebuild.log
+            TestResults.xcresult
+          if-no-files-found: ignore
