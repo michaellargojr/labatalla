@@ -14,7 +14,7 @@ Native iPhone app, SwiftUI, iOS 17 and up. Everything lives on the phone.
 - **Goals** is where you set them: name, horizon, color, symbol, when (every day, some days, or N times a week) and why. Retire a goal and its history stays on the calendar.
 - **Today** is the tile in the middle of the bar: today's list, one tap per goal.
 - **Progress** shows each goal's run, best run, total days and its last twelve weeks as a strip.
-- **Settings**: dark, light or system; royal or tech blue; four app icons; week starting Monday or Sunday; export and import as one JSON file.
+- **Settings**: dark, light or system; royal or tech blue; four app icons; week starting Monday or Sunday; haptics; an optional daily reminder; export and import as one JSON file.
 
 ## What it never does
 
@@ -38,3 +38,16 @@ tools/make_icons.py     Draws the four app icons into the asset catalog
 ```
 
 `CLAUDE.md` holds the conventions for anyone (or any assistant) changing the app.
+
+## Trying it
+
+A debug build has **Settings > Data > Sample days**, which adds five goals and eight weeks of marks from a fixed seed, so the calendar shows color on the first run and screenshots come out the same every time. Erase it with **Start over**.
+
+## Roadmap
+
+1. Install on the phone, live with it for a week, and fix what the week finds.
+2. A home-screen widget with the month grid, so the colors are visible without opening the app.
+3. A note on a day (the model already keeps one per mark).
+4. Yearly view: twelve small months on one screen.
+5. Goals with a count (pages read, glasses of water) on top of done or not done.
+6. iCloud backup of the JSON file.

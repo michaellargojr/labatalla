@@ -21,6 +21,7 @@ struct SettingsView: View {
                 ScreenTitle("Settings")
                 block("Look") { lookRows }
                 block("Calendar") { calendarRows }
+                block("Reminder") { reminderRows }
                 block("Data") { dataRows }
                 block("About") { about }
                 Text(AppVersion.current).font(.system(size: 12)).foregroundStyle(p.muted)
@@ -144,6 +145,13 @@ struct SettingsView: View {
                 .labelsHidden()
                 .tint(p.accent)
         }
+        HStack {
+            rowTitle("Haptics", "A small tap when you mark a goal or earn a badge")
+            Spacer()
+            Toggle("", isOn: Binding(get: { store.settings.haptics }, set: { v in store.update { $0.haptics = v } }))
+                .labelsHidden()
+                .tint(p.accent)
+        }
         VStack(alignment: .leading, spacing: 8) {
             rowTitle("Mantra", "The line under the calendar's title")
             FieldBox {
@@ -160,6 +168,41 @@ struct SettingsView: View {
     private func saveMantra() {
         let m = mantra.trimmingCharacters(in: .whitespacesAndNewlines)
         if store.settings.mantra != m { store.update { $0.mantra = m } }
+    }
+
+    @ViewBuilder private var reminderRows: some View {
+        HStack {
+            rowTitle("Daily reminder", store.settings.reminderOn
+                     ? "Every day at \(Reminder.timeText(store.settings.reminderMinute))"
+                     : "One quiet nudge a day to mark the day")
+            Spacer()
+            Toggle("", isOn: Binding(get: { store.settings.reminderOn }, set: { v in store.update { $0.reminderOn = v } }))
+                .labelsHidden()
+                .tint(p.accent)
+        }
+        if store.settings.reminderOn {
+            HStack {
+                rowTitle("Time")
+                Spacer()
+                DatePicker("", selection: reminderDate, displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+            }
+            Text("If the phone asks, allow notifications; the reminder is the only one the app ever sends.")
+                .font(.system(size: 13)).foregroundStyle(p.muted)
+        }
+    }
+
+    /// The reminder's minute of the day as a Date, for the time picker.
+    private var reminderDate: Binding<Date> {
+        Binding(get: {
+            var c = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+            c.hour = store.settings.reminderMinute / 60
+            c.minute = store.settings.reminderMinute % 60
+            return Calendar.current.date(from: c) ?? Date()
+        }, set: { d in
+            let c = Calendar.current.dateComponents([.hour, .minute], from: d)
+            store.update { $0.reminderMinute = (c.hour ?? 20) * 60 + (c.minute ?? 0) }
+        })
     }
 
     @ViewBuilder private var dataRows: some View {
@@ -185,6 +228,17 @@ struct SettingsView: View {
         }
         Text("Everything stays on this phone. Nothing is sent anywhere.")
             .font(.system(size: 13)).foregroundStyle(p.muted)
+        #if DEBUG
+        Divider1()
+        HStack {
+            rowTitle("Sample days", "Debug builds only: five goals and eight weeks of marks")
+            Spacer()
+            PillButton(title: "Fill", icon: "paintpalette.fill") {
+                store.loadSample()
+                message = "Added five goals and eight weeks of marks."
+            }
+        }
+        #endif
     }
 
     private var about: some View {

@@ -21,6 +21,9 @@ ios/LaBatalla/Data/Store.swift      AppStore (@Observable): goals, marks, settin
 ios/LaBatalla/Data/Settings.swift   Appearance, BlueScheme, AppIconChoice, WeekStart, Settings
 ios/LaBatalla/Data/Snapshot.swift   The file format (lenient decoding) + JSONFile for the Files sheet
 ios/LaBatalla/Data/Starters.swift   The Ideas sheet's ready-made goals
+ios/LaBatalla/Data/Reminder.swift   The one daily local notification (UNUserNotificationCenter), synced from Settings
+ios/LaBatalla/Data/Sample.swift     DEBUG only: loadSample(), five goals and eight weeks of seeded marks
+ios/LaBatalla/PrivacyInfo.xcprivacy App Store privacy manifest (UserDefaults reason CA92.1; no tracking, no collection)
 ios/LaBatalla/Theme/Theme.swift     Palette (p.bg/card/elevated/text/secondary/muted/line/border/accent/onAccent/onBand), Radius
 ios/LaBatalla/Theme/Shapes.swift    StarShape, BattleMark
 ios/LaBatalla/Views/Components.swift  Card, FieldBox, SectionLabel, ScreenTitle, PillButton, Chip, RectCheck, GoalIcon, HorizonTag, BadgeChip, StatTile, EmptyNote, .screen()

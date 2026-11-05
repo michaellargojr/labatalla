@@ -55,6 +55,9 @@ struct Settings: Codable, Hashable {
     /// The line under the calendar's title. Your grandfather's, by default.
     var mantra: String = DEFAULT_MANTRA
     var haptics: Bool = true
+    /// One local notification a day, at `reminderMinute` minutes past midnight. Off until turned on.
+    var reminderOn: Bool = false
+    var reminderMinute: Int = 20 * 60
 
     init() {}
 
@@ -67,5 +70,8 @@ struct Settings: Codable, Hashable {
         showBadges = try c.decodeIfPresent(Bool.self, forKey: .showBadges) ?? true
         mantra = try c.decodeIfPresent(String.self, forKey: .mantra) ?? DEFAULT_MANTRA
         haptics = try c.decodeIfPresent(Bool.self, forKey: .haptics) ?? true
+        reminderOn = try c.decodeIfPresent(Bool.self, forKey: .reminderOn) ?? false
+        let minute = try c.decodeIfPresent(Int.self, forKey: .reminderMinute) ?? 20 * 60
+        reminderMinute = min(max(minute, 0), 24 * 60 - 1)
     }
 }

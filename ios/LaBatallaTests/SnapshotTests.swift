@@ -62,6 +62,17 @@ import Testing
         #expect(s.settings == Settings())
     }
 
+    @Test func reminderSettingsStayInRange() throws {
+        let late = try Snapshot.decode(Data(#"{"settings": {"reminderOn": true, "reminderMinute": 5000}}"#.utf8))
+        #expect(late.settings.reminderOn)
+        #expect(late.settings.reminderMinute == 24 * 60 - 1)
+        let early = try Snapshot.decode(Data(#"{"settings": {"reminderMinute": -5}}"#.utf8))
+        #expect(!early.settings.reminderOn)
+        #expect(early.settings.reminderMinute == 0)
+        #expect(Settings().reminderMinute == 20 * 60)
+        #expect(Reminder.timeText(0).contains("12") || Reminder.timeText(0).contains("0"))
+    }
+
     @Test func schedulesEncodeAsTheirCase() throws {
         let data = try JSONEncoder().encode(Goal(name: "G", schedule: .timesPerWeek(2)))
         let text = String(decoding: data, as: UTF8.self)

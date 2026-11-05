@@ -31,8 +31,8 @@ struct DaySheet: View {
             .padding(.top, 24)
             .padding(.bottom, 24)
         }
-        .sensoryFeedback(.success, trigger: s.badges.count) { old, new in new > old }
-        .sensoryFeedback(.impact(weight: .light), trigger: s.done.count)
+        .sensoryFeedback(.success, trigger: s.badges.count) { old, new in store.settings.haptics && new > old }
+        .sensoryFeedback(.impact(weight: .light), trigger: s.done.count) { _, _ in store.settings.haptics }
     }
 
     private func header(_ s: DaySummary, future: Bool) -> some View {

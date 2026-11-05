@@ -16,4 +16,5 @@ How versions and builds move, and who writes the next entry: ios/README.md.
 - Badges on a day: the star when every six-year goal asked of it was done, the bolt for every six-month goal, the crown for everything.
 - Today, in the middle of the bar: today's list, one tap per goal.
 - Progress: each goal's run, best run, total days and its last twelve weeks.
-- Settings: dark or light, royal or tech blue, four app icons, Monday or Sunday weeks, export and import.
+- Settings: dark or light, royal or tech blue, four app icons, Monday or Sunday weeks, haptics, export and import.
+- An optional daily reminder, off until you turn it on: one quiet notification at the time you pick.

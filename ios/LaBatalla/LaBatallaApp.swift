@@ -66,6 +66,9 @@ struct RootView: View {
         .tint(p.accent)
         .environment(\.palette, p)
         .onChange(of: store.settings.icon) { _, i in AppIcon.match(i) }
+        // The daily reminder follows the settings: time, on or off, and the mantra it carries.
+        .onChange(of: store.loaded, initial: true) { _, loaded in if loaded { Reminder.sync(store.settings) } }
+        .onChange(of: store.settings) { _, s in Reminder.sync(s) }
         .preferredColorScheme(store.settings.appearance == .system ? nil : (isDark ? .dark : .light))
     }
 
