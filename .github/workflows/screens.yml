@@ -1,0 +1,120 @@
+name: iOS screens
+
+# Builds a debug app, opens it on a simulator with the sample life (the launch arguments in
+# ios/LaBatalla/Data/Sample.swift), and takes a picture of each screen. The pictures are
+# committed to the same branch under docs/screens, so they can be looked at without a Mac.
+# Runs only when the pushed commit's message holds "[screens]".
+on:
+  push:
+    branches: ['claude/**']
+
+permissions:
+  contents: write
+
+jobs:
+  screens:
+    name: Take a picture of each screen
+    if: contains(github.event.head_commit.message, '[screens]')
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick a simulator
+        id: sim
+        run: |
+          line=$(xcrun simctl list devices available | grep -E 'iPhone [0-9]+ Pro \(' | head -1)
+          if [ -z "$line" ]; then line=$(xcrun simctl list devices available | grep iPhone | head -1); fi
+          udid=$(echo "$line" | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' | head -1)
+          echo "Using: $line"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      - name: Build the app
+        run: |
+          set +e
+          xcodebuild build \
+            -project ios/LaBatalla.xcodeproj -scheme LaBatalla -configuration Debug \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY= > xcodebuild.log 2>&1
+          status=$?
+          grep -E 'error:|BUILD' xcodebuild.log | tail -n 60
+          exit $status
+
+      - name: Open each screen and take its picture
+        run: |
+          udid="${{ steps.sim.outputs.udid }}"
+          app=$(find build/Build/Products -maxdepth 2 -name 'LaBatalla.app' | head -1)
+          bundle=com.michaellargo.labatalla
+          echo "App: $app"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl ui "$udid" appearance dark
+          xcrun simctl status_bar "$udid" override --time "9:41" --batteryState charged --batteryLevel 100 || true
+          xcrun simctl install "$udid" "$app"
+          mkdir -p raw docs/screens
+          rm -f docs/screens/*.jpg
+
+          shot() {
+            name="$1"; shift
+            xcrun simctl terminate "$udid" "$bundle" > /dev/null 2>&1 || true
+            if ! xcrun simctl launch "$udid" "$bundle" -quiet "$@" > /dev/null; then echo "DID NOT LAUNCH: $name"; return; fi
+            sleep 5
+            if xcrun simctl spawn "$udid" launchctl list | grep -q "$bundle"; then echo "up: $name"; else echo "NOT RUNNING AFTER 5s: $name"; fi
+            xcrun simctl io "$udid" screenshot "raw/$name.png" > /dev/null 2>&1
+            sips -Z 1100 -s format jpeg -s formatOptions 55 "raw/$name.png" --out "docs/screens/$name.jpg" > /dev/null
+          }
+
+          shot 01-first-run -fresh
+          shot 02-calendar -sample
+          shot 03-today -sample -screen today
+          shot 04-today-answered -sample -screen today -answer
+          shot 05-sleep-check-in -sample -screen sleep
+          shot 06-goals -sample -tab goals
+          shot 07-goal -sample -tab goals -screen goal
+          shot 08-goal-dates -sample -tab goals -screen goal -anchor dates
+          shot 09-goal-hours -sample -tab goals -screen goal -anchor hours
+          shot 10-goal-path -sample -tab goals -screen goal -anchor path
+          shot 11-goal-open -sample -tab goals -screen goal -anchor open
+          shot 12-job -sample -tab goals -screen job -anchor work
+          shot 13-new-goal -sample -tab goals -screen newgoal
+          shot 14-ideas -sample -tab goals -screen ideas
+          shot 15-insights -sample -tab insights
+          shot 16-insights-all -sample -tab insights -all
+          shot 17-insights-sleep -sample -tab insights -anchor sleep
+          shot 18-insights-work -sample -tab insights -anchor work
+          shot 19-insights-goals -sample -tab insights -anchor goals
+          shot 20-insights-standings -sample -tab insights -anchor standings
+          shot 21-insights-month -sample -tab insights -anchor month
+          shot 22-oracle -sample -tab insights -screen oracle
+          shot 23-head-to-head -sample -tab insights -screen faceoff
+          shot 24-month-number -sample -tab insights -screen plan
+          shot 25-settings -sample -tab settings
+          shot 26-settings-check-ins -sample -tab settings -anchor checkins
+          shot 27-settings-oracle -sample -tab settings -anchor oracle
+          shot 28-calendar-hours -sample -anchor hours
+          shot 29-calendar-week -sample -calendarMode week
+          xcrun simctl ui "$udid" appearance light
+          shot 30-calendar-light -sample
+          shot 31-insights-light -sample -tab insights
+          shot 32-today-light -sample -screen today -answer
+          ls -la docs/screens
+
+      - name: Any crash reports
+        if: always()
+        run: |
+          ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i labatalla || echo "No crash reports."
+          for f in ~/Library/Logs/DiagnosticReports/*LaBatalla*; do
+            [ -f "$f" ] || continue
+            echo "=== $f"
+            head -c 6000 "$f"
+          done
+
+      - name: Commit the pictures to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screens
+          if git diff --cached --quiet; then echo "Nothing new."; exit 0; fi
+          git commit -m "Screens from the simulator"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

@@ -57,6 +57,10 @@ enum Reminder {
     /// Puts the pending notifications in line with the settings. Asks permission the first time
     /// any is turned on; after that iOS remembers the answer and shows nothing.
     static func sync(_ settings: Settings, hasWork: Bool = false) {
+        #if DEBUG
+        // Screenshot runs open the app cold many times; none of them should raise the permission alert.
+        if DebugLaunch.has("-quiet") { return }
+        #endif
         let center = UNUserNotificationCenter.current()
         let wanted = planned(settings, hasWork: hasWork)
         let unwanted = [evening, morning, month].filter { id in !wanted.contains { $0.id == id } }

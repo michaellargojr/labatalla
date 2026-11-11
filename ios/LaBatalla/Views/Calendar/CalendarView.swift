@@ -106,7 +106,8 @@ struct CalendarView: View {
         let first = monthStart(anchor)
         let cells = monthGrid(first, start)
         let sums = store.summaries(cells.compactMap { $0 })
-        return ScrollView {
+        return ScrollViewReader { proxy in
+          ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 monthRow(first: first, bounds: bounds, start: start)
                 // A ZStack, so the old and new month overlap while they slide.
@@ -122,12 +123,20 @@ struct CalendarView: View {
                     step(dx < 0 ? 1 : -1, bounds: bounds, start: start)
                 })
                 monthTotals(sums, first: first)
-                hours(first: first)
+                hours(first: first).id("hours")
             }
             .padding(.horizontal, 16)
             .padding(.top, 4)
             .padding(.bottom, 24)
             .clipped()
+          }
+          #if DEBUG
+          .onAppear {
+              if DebugLaunch.anchor == "hours" {
+                  DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { proxy.scrollTo("hours", anchor: .top) }
+              }
+          }
+          #endif
         }
     }
 
