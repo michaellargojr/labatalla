@@ -18,6 +18,14 @@ Native iPhone app, SwiftUI, iOS 17 and up. Everything lives on the phone.
 - **The Oracle** is Claude, reading the whole map at once. Ask it what you cannot see from inside the day. It needs your own Anthropic API key, kept in the phone's keychain; without one, Copy my brief puts everything it would read on the clipboard.
 - **Settings**: sleep baseline and targets, three optional reminders, currency, the Oracle's key and model, dark or light, royal or tech blue, four app icons, export and import as one JSON file.
 
+## What it looks like
+
+From the simulator, with the made-up sample life. Every screen is in `docs/screens/`.
+
+| Calendar | Today | Insights | Head to head |
+| --- | --- | --- | --- |
+| <img src="docs/screens/02-calendar.jpg" width="200"> | <img src="docs/screens/04-today-answered.jpg" width="200"> | <img src="docs/screens/15-insights.jpg" width="200"> | <img src="docs/screens/23-head-to-head.jpg" width="200"> |
+
 ## What it never does
 
 No streak-shaming, no red, no "you missed". A no is an answer with a reason, kept as data and never shown on the calendar. A day with nothing marked is just a day without color. Insights say what happened in plain numbers and leave the judging out.
