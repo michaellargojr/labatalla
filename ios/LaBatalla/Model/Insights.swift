@@ -68,6 +68,23 @@ func insights(_ x: InsightInput) -> [Insight] {
     return out.sorted { ($1.weight, $0.id) < ($0.weight, $1.id) }
 }
 
+/// The few to show first: the strongest from each area before a second from any, so one area
+/// with a lot to say does not crowd out the rest. Kept in the order they came in.
+func headline(_ all: [Insight], limit: Int) -> [Insight] {
+    guard all.count > limit else { return all }
+    var picked: [String] = []
+    var seen: Set<InsightArea> = []
+    for i in all where !seen.contains(i.area) {
+        seen.insert(i.area)
+        picked.append(i.id)
+    }
+    for i in all where picked.count < limit && !picked.contains(i.id) {
+        picked.append(i.id)
+    }
+    let keep = Set(picked.prefix(limit))
+    return all.filter { keep.contains($0.id) }
+}
+
 private func active(_ x: InsightInput) -> [Goal] {
     x.goals.filter { $0.isActive(on: x.today) }.sorted { ($0.order, $0.name) < ($1.order, $1.name) }
 }

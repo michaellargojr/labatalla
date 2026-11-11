@@ -57,3 +57,23 @@ import Testing
         #expect(duelable([a, done], today: "2026-11-11").map(\.name) == ["A"])
     }
 }
+
+@Suite struct FaceOffPairingTests {
+    @Test func aGoalIsNeverWeighedAgainstTheResultItServes() {
+        let shape = Goal(name: "Shape", createdAt: "2026-10-01", order: 0, kind: .outcome)
+        let lift = Goal(name: "Lift", createdAt: "2026-10-01", order: 1, kind: .time, parentId: shape.id)
+        let read = Goal(name: "Read", createdAt: "2026-10-01", order: 2, kind: .adherence)
+        #expect(!canDuel(shape, lift))
+        #expect(!canDuel(lift, shape))
+        #expect(!canDuel(read, read))
+        #expect(canDuel(lift, read))
+        let goals = [shape, lift, read]
+        #expect(duelCount(goals, duels: []).of == 2)
+        let first = nextDuel(goals, duels: [])
+        #expect(first?.0.id == shape.id && first?.1.id == read.id)
+        // An old answer between the two no longer counts.
+        let old = [Duel(a: shape.id, b: lift.id, winner: lift.id, at: 1)]
+        #expect(duelCount(goals, duels: old).done == 0)
+        #expect(duelWins(goals, duels: old).isEmpty)
+    }
+}

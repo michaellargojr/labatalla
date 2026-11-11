@@ -41,7 +41,7 @@ struct OracleView: View {
                     .scrollDismissesKeyboard(.interactively)
                     .onChange(of: store.oracle.count) { _, _ in withAnimation { proxy.scrollTo("end", anchor: .bottom) } }
                     .onChange(of: busy) { _, _ in withAnimation { proxy.scrollTo("end", anchor: .bottom) } }
-                    .onAppear { proxy.scrollTo("end", anchor: .bottom) }
+                    .onAppear { if !store.oracle.isEmpty { proxy.scrollTo("end", anchor: .bottom) } }
                 }
                 inputBar
             }

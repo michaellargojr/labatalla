@@ -58,6 +58,13 @@ struct RootView: View {
             page(.settings) { SettingsView() }
         }
         .background(p.bg.ignoresSafeArea())
+        // A page that scrolls goes under the clock; this keeps the clock on plain background.
+        .overlay(alignment: .top) {
+            GeometryReader { geo in
+                p.bg.frame(height: geo.safeAreaInsets.top).offset(y: -geo.safeAreaInsets.top)
+            }
+            .allowsHitTesting(false)
+        }
         // Every page, pushed ones included, keeps room under the bar for its last row.
         .background(TabBarRoomSetter(deviceBottom: $deviceBottom))
         .overlay(alignment: .bottom) {

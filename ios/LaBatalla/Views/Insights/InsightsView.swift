@@ -95,7 +95,7 @@ struct InsightsView: View {
     // MARK: Patterns
 
     private func patterns(_ found: [Insight]) -> some View {
-        let shown = showAll ? found : Array(found.prefix(first))
+        let shown = showAll ? found : headline(found, limit: first)
         return block("What the days add up to") {
             if found.isEmpty {
                 EmptyNote("Nothing stands out yet. Patterns need a week or two of check-ins.")

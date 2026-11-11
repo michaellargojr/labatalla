@@ -47,7 +47,7 @@ struct DaySheet: View {
             // "-answer": answer the first goals of the day, so the open card can be looked at.
             guard DebugLaunch.has("-answer"), open == nil else { return }
             let due = store.summary(day).due
-            if let g = due.first(where: { $0.kind == .time }) {
+            if let g = store.activeGoals.first(where: { $0.kind == .time }) {
                 store.answer(g.id, on: day, done: true)
                 open = g.id
             }

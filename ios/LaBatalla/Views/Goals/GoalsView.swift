@@ -166,9 +166,9 @@ struct GoalRow: View {
             GoalIcon(goal: goal, size: 42)
             VStack(alignment: .leading, spacing: 3) {
                 Text(goal.name).font(.system(size: 16, weight: .semibold)).foregroundStyle(p.text).lineLimit(2)
-                Text(planLine).font(.system(size: 13)).foregroundStyle(p.muted).lineLimit(1)
+                Text(planLine).font(.system(size: 13)).foregroundStyle(p.muted).lineLimit(2)
                 if let extra = extraLine(open: open) {
-                    Text(extra).font(.system(size: 12, weight: .semibold)).foregroundStyle(p.accent).lineLimit(1)
+                    Text(extra).font(.system(size: 12, weight: .semibold)).foregroundStyle(p.accent).lineLimit(2)
                 }
             }
             Spacer(minLength: 8)

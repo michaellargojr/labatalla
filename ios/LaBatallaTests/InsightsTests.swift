@@ -145,3 +145,23 @@ private func ids(_ x: InsightInput) -> [String] { insights(x).map(\.id) }
         #expect(!found.contains { $0.id == "work.plan.\(job.id)" })
     }
 }
+
+@Suite struct HeadlineTests {
+    private func one(_ id: String, _ area: InsightArea, _ weight: Int) -> Insight {
+        Insight(id: id, area: area, title: id, detail: "", weight: weight)
+    }
+
+    @Test func everyAreaGetsASayBeforeAnyGetsTwo() {
+        let all = [one("r1", .reasons, 90), one("r2", .reasons, 85), one("r3", .reasons, 80),
+                   one("w1", .work, 70), one("s1", .sleep, 60), one("g1", .goals, 50)]
+        #expect(headline(all, limit: 4).map(\.id) == ["r1", "w1", "s1", "g1"])
+        #expect(headline(all, limit: 5).map(\.id) == ["r1", "r2", "w1", "s1", "g1"])
+        #expect(headline(all, limit: 2).map(\.id) == ["r1", "w1"])
+    }
+
+    @Test func aShortListComesBackWhole() {
+        let all = [one("a", .time, 3), one("b", .time, 2)]
+        #expect(headline(all, limit: 5) == all)
+        #expect(headline([], limit: 5).isEmpty)
+    }
+}

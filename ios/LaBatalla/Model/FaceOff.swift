@@ -9,11 +9,18 @@ func duelable(_ goals: [Goal], today t: String = today()) -> [Goal] {
     goals.filter { $0.isActive(on: t) && !$0.isAchieved }
 }
 
+/// Whether two goals can be put head to head. A goal is never weighed against the result it
+/// serves: one is the way to the other, so there is nothing to choose.
+func canDuel(_ a: Goal, _ b: Goal) -> Bool {
+    a.id != b.id && a.parentId != b.id && b.parentId != a.id
+}
+
 /// The latest answer for each pair.
 private func latestDuels(_ goals: [Goal], _ duels: [Duel]) -> [Duel] {
-    let ids = Set(goals.map(\.id))
+    let byId = Dictionary(goals.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
     var latest: [String: Duel] = [:]
-    for d in duels where ids.contains(d.a) && ids.contains(d.b) && (d.winner == d.a || d.winner == d.b) {
+    for d in duels where d.winner == d.a || d.winner == d.b {
+        guard let a = byId[d.a], let b = byId[d.b], canDuel(a, b) else { continue }
         let key = d.a < d.b ? "\(d.a)|\(d.b)" : "\(d.b)|\(d.a)"
         if let old = latest[key], old.at > d.at { continue }
         latest[key] = d
@@ -25,7 +32,7 @@ private func latestDuels(_ goals: [Goal], _ duels: [Duel]) -> [Duel] {
 func nextDuel(_ goals: [Goal], duels: [Duel]) -> (Goal, Goal)? {
     let done = latestDuels(goals, duels)
     for (i, a) in goals.enumerated() {
-        for b in goals.dropFirst(i + 1) where !done.contains(where: { $0.isBetween(a.id, b.id) }) {
+        for b in goals.dropFirst(i + 1) where canDuel(a, b) && !done.contains(where: { $0.isBetween(a.id, b.id) }) {
             return (a, b)
         }
     }
@@ -34,7 +41,11 @@ func nextDuel(_ goals: [Goal], duels: [Duel]) -> (Goal, Goal)? {
 
 /// How many pairs there are, and how many have an answer.
 func duelCount(_ goals: [Goal], duels: [Duel]) -> (done: Int, of: Int) {
-    (latestDuels(goals, duels).count, goals.count * (goals.count - 1) / 2)
+    var pairs = 0
+    for (i, a) in goals.enumerated() {
+        for b in goals.dropFirst(i + 1) where canDuel(a, b) { pairs += 1 }
+    }
+    return (latestDuels(goals, duels).count, pairs)
 }
 
 /// Head-to-heads won by each goal.

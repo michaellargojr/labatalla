@@ -57,7 +57,7 @@ struct FaceOffView: View {
         var open: [(Goal, Goal)] = []
         for (i, a) in pool.enumerated() {
             for b in pool.dropFirst(i + 1) {
-                if skipped.contains(key(a, b)) { continue }
+                if !canDuel(a, b) || skipped.contains(key(a, b)) { continue }
                 if store.duels.contains(where: { $0.isBetween(a.id, b.id) }) { continue }
                 open.append((a, b))
             }
