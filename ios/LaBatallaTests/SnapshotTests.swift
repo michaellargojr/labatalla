@@ -15,7 +15,7 @@ import Testing
         let snap = Snapshot(goals: [g], marks: [m], settings: settings)
         let back = try Snapshot.decode(try snap.encoded())
         #expect(back.app == "labatalla")
-        #expect(back.format == 1)
+        #expect(back.format == 2)
         #expect(back.goals == [g])
         #expect(back.marks == [m])
         #expect(back.settings == settings)

@@ -33,16 +33,17 @@ struct DaySummary: Equatable {
 /// Which goal ids were marked on each day.
 typealias DoneByDay = [String: Set<String>]
 
+/// Only a yes colors a day. A no is an answer too, but it is never on the calendar.
 func doneByDay(_ marks: [Mark]) -> DoneByDay {
     var out: DoneByDay = [:]
-    for m in marks { out[m.day, default: []].insert(m.goalId) }
+    for m in marks where m.done { out[m.day, default: []].insert(m.goalId) }
     return out
 }
 
 /// Whether `goal` is asked of `day`. Daily and weekday goals: whenever planned. Times-a-week
 /// goals: when marked that day, or once the rest of the week could not make the count without it.
 func isDue(_ goal: Goal, on day: String, done: DoneByDay, weekStart start: WeekStart) -> Bool {
-    guard goal.isActive(on: day) else { return false }
+    guard goal.kind.hasCheckIn, goal.isActive(on: day) else { return false }
     switch goal.schedule {
     case .daily:
         return true
