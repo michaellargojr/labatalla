@@ -284,7 +284,7 @@ struct SettingsView: View {
                  hasKey ? "Kept in this phone's keychain. It is never in the export file."
                         : "The Oracle is Claude. To ask it from inside the app, paste an Anthropic API key. It is kept in this phone's keychain.")
         if hasKey {
-            PillButton(title: "Remove key", icon: "key.slash") {
+            PillButton(title: "Remove key", icon: "trash") {
                 OracleKey.save("")
                 hasKey = OracleKey.isSet
             }
