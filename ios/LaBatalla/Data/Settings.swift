@@ -59,6 +59,22 @@ struct Settings: Codable, Hashable {
     var reminderOn: Bool = false
     var reminderMinute: Int = 20 * 60
 
+    /// False until the first-run questions (sleep need, bedtime, wake time) are answered.
+    var onboarded: Bool = false
+    /// The sleep this person needs a night, in minutes. Everyone's is different; 8h until set.
+    var sleepNeedMinutes: Int = 8 * 60
+    /// Target bedtime and wake time, as minutes of the day.
+    var targetBedMinute: Int = 22 * 60 + 30
+    var targetWakeMinute: Int = 7 * 60
+    /// A notification a little after the target wake time, asking for the sleep check-in.
+    var morningCheckIn: Bool = false
+    /// A notification on the 1st, asking for the month's work number.
+    var monthStartReminder: Bool = true
+    /// The sign money is written with.
+    var currency: String = "$"
+    /// The model the Oracle asks.
+    var oracleModel: String = OracleModel.fallback
+
     init() {}
 
     init(from decoder: Decoder) throws {
@@ -73,5 +89,15 @@ struct Settings: Codable, Hashable {
         reminderOn = try c.decodeIfPresent(Bool.self, forKey: .reminderOn) ?? false
         let minute = try c.decodeIfPresent(Int.self, forKey: .reminderMinute) ?? 20 * 60
         reminderMinute = min(max(minute, 0), 24 * 60 - 1)
+        onboarded = try c.decodeIfPresent(Bool.self, forKey: .onboarded) ?? false
+        sleepNeedMinutes = min(max(try c.decodeIfPresent(Int.self, forKey: .sleepNeedMinutes) ?? 8 * 60, 3 * 60), 14 * 60)
+        targetBedMinute = clampMinute(try c.decodeIfPresent(Int.self, forKey: .targetBedMinute) ?? 22 * 60 + 30)
+        targetWakeMinute = clampMinute(try c.decodeIfPresent(Int.self, forKey: .targetWakeMinute) ?? 7 * 60)
+        morningCheckIn = try c.decodeIfPresent(Bool.self, forKey: .morningCheckIn) ?? false
+        monthStartReminder = try c.decodeIfPresent(Bool.self, forKey: .monthStartReminder) ?? true
+        let sign = try c.decodeIfPresent(String.self, forKey: .currency) ?? "$"
+        currency = sign.isEmpty ? "$" : sign
+        let model = try c.decodeIfPresent(String.self, forKey: .oracleModel) ?? OracleModel.fallback
+        oracleModel = model.isEmpty ? OracleModel.fallback : model
     }
 }

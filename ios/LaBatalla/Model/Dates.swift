@@ -179,3 +179,55 @@ func relativeDay(_ day: String, today t: String = today()) -> String? {
     default: return nil
     }
 }
+
+// MARK: Months and spans
+
+/// "2026-11" for any day in November 2026.
+func monthKey(_ day: String) -> String { String(day.prefix(7)) }
+
+/// The last day of the month holding `day`.
+func monthEnd(_ day: String) -> String { addDays(daysInMonth(day) - 1, to: monthStart(day)) }
+
+/// "November" for any day in it.
+func monthName(_ day: String) -> String { monthTitle(day).month }
+
+/// The same day of the month `n` months on, or that month's last day when it is shorter.
+func addMonthsKeepingDay(_ n: Int, to day: String) -> String {
+    dayString(gregorian.date(byAdding: .month, value: n, to: dayDate(day)) ?? dayDate(day))
+}
+
+/// Every day from `a` through `b`, in order. Empty when `b` is before `a`.
+func daysFrom(_ a: String, through b: String) -> [String] {
+    guard a <= b else { return [] }
+    return (0...daysBetween(a, b)).map { addDays($0, to: a) }
+}
+
+private let mediumDayFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.calendar = Calendar(identifier: .gregorian)
+    f.dateFormat = "MMM d, yyyy"
+    return f
+}()
+
+/// "Jun 21, 2027".
+func mediumDay(_ day: String) -> String { mediumDayFormatter.string(from: dayDate(day)) }
+
+/// "Jun 21" this year, "Jun 21, 2027" in any other.
+func briefDay(_ day: String, today t: String = today()) -> String {
+    day.prefix(4) == t.prefix(4) ? monthDayFormatter.string(from: dayDate(day)) : mediumDay(day)
+}
+
+/// "in 3 days", "in 7 months", "12 days ago", "today": how far `day` is from today, in the
+/// largest unit that reads well.
+func distanceWords(_ day: String, today t: String = today()) -> String {
+    let d = daysBetween(t, day)
+    if d == 0 { return "today" }
+    let n = abs(d)
+    let words: String
+    if n < 14 { words = n == 1 ? "1 day" : "\(n) days" }
+    else if n < 60 { words = "\(n / 7) weeks" }
+    else if n < 730 { words = "\(Int((Double(n) / 30.44).rounded())) months" }
+    else { words = String(format: "%.1f years", Double(n) / 365.25) }
+    return d > 0 ? "in \(words)" : "\(words) ago"
+}
