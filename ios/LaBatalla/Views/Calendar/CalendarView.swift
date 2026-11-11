@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The main tab. Month: one month at a time, arrows or a sideways swipe to change it, with what
-/// the month earned under the grid. Week: every week since the first mark, each a strip, with
+/// the month earned and every goal's hours against its plan under the grid. Week: every week since the first mark, each a strip, with
 /// This week at the bottom. A day you marked something on is filled with the colors of those
 /// goals; today has an outline. Tap a day to see it and mark it.
 struct CalendarView: View {
@@ -11,6 +11,8 @@ struct CalendarView: View {
     @State private var anchor = today()
     @State private var forward = true
     @State private var picked: DayPick?
+    @State private var sleeping = false
+    @State private var planning: Goal?
 
     private var mode: CalendarMode { CalendarMode(rawValue: modeRaw) ?? .month }
 
@@ -26,18 +28,75 @@ struct CalendarView: View {
                     .padding(.bottom, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            prompts
             switch mode {
             case .month: months(start)
             case .week: weeks(start)
             }
         }
         .screen()
+        .sheet(isPresented: $sleeping) {
+            SleepCheckInView(day: today())
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(p.card)
+        }
+        .sheet(item: $planning) { g in
+            MonthPlanSheet(goal: g)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(p.card)
+        }
         .sheet(item: $picked) { pick in
             DaySheet(day: pick.day)
                 .presentationDetents([.fraction(0.78), .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(p.card)
         }
+    }
+
+    // MARK: What today is still waiting for
+
+    /// The two things the app asks for by itself: last night's sleep, and at the start of a
+    /// month (or the first time a job is opened in one) the month's number.
+    @ViewBuilder
+    private var prompts: some View {
+        let t = today()
+        let needSleep = store.settings.onboarded && store.sleepLog(on: t) == nil
+        let jobs = store.jobsNeedingPlan(today: t)
+        if needSleep || !jobs.isEmpty {
+            VStack(spacing: 8) {
+                if needSleep {
+                    prompt("moon.fill", "Sleep check-in", "Last night, in a few seconds") { sleeping = true }
+                }
+                ForEach(jobs) { g in
+                    prompt("briefcase.fill", "Set the number for \(planWords(month: t, setOn: t))", g.name) { planning = g }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 10)
+        }
+    }
+
+    private func prompt(_ icon: String, _ title: String, _ detail: String, action: @escaping () -> Void) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Radius.row, style: .continuous)
+        return Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon).font(.system(size: 15, weight: .bold)).foregroundStyle(p.onAccent)
+                    .frame(width: 34, height: 34)
+                    .background(p.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(p.text).lineLimit(1)
+                    Text(detail).font(.system(size: 12)).foregroundStyle(p.muted).lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(p.accent)
+            }
+            .padding(10)
+            .background(p.accentSoft, in: shape)
+            .contentShape(shape)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Month
@@ -63,7 +122,7 @@ struct CalendarView: View {
                     step(dx < 0 ? 1 : -1, bounds: bounds, start: start)
                 })
                 monthTotals(sums, first: first)
-                legend
+                hours(first: first)
             }
             .padding(.horizontal, 16)
             .padding(.top, 4)
@@ -130,21 +189,36 @@ struct CalendarView: View {
         }
     }
 
-    /// Which color is which goal.
-    private var legend: some View {
-        let goals = store.activeGoals
+    /// The trees and the forest under the grid: every goal with its week, its month and its
+    /// total against what the plan asked. A past month shows that month alone.
+    private func hours(first: String) -> some View {
+        let t = today()
+        let current = monthStart(t) == first
+        let asOf = current ? t : monthEnd(first)
+        let goals = store.orderedGoals.filter { $0.kind.hasCheckIn && $0.isActive(on: asOf) }
         return Group {
             if !goals.isEmpty {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 16) {
+                    SectionLabel(current ? "Against the plan" : "\(monthName(first)) against the plan")
                     ForEach(goals) { g in
-                        HStack(spacing: 7) {
-                            RoundedRectangle(cornerRadius: 4, style: .continuous).fill(p.color(g.color)).frame(width: 12, height: 12)
-                            Text(g.name).font(.system(size: 13, weight: .semibold)).foregroundStyle(p.secondary).lineLimit(1)
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 7) {
+                                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(p.color(g.color)).frame(width: 12, height: 12)
+                                Text(g.name).font(.system(size: 14, weight: .bold)).foregroundStyle(p.text).lineLimit(1)
+                            }
+                            GoalMeters(goal: g, asOf: asOf, showWeek: current, showTotal: current)
                         }
                     }
+                    if !store.sleep.isEmpty {
+                        Text("The thin bar under a date is that night's sleep against your baseline.")
+                            .font(.system(size: 12)).foregroundStyle(p.muted)
+                    }
                 }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(p.card, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
                 .padding(.top, 6)
-            } else {
+            } else if store.activeGoals.isEmpty {
                 Text("No goals yet. Set one in Goals, or tap Today.")
                     .font(.system(size: 14)).foregroundStyle(p.muted).padding(.top, 6)
             }
@@ -182,11 +256,12 @@ struct WeekRow: View {
     var body: some View {
         let days = weekDays(weekStart, start)
         let sums = store.summaries(days)
+        let nights = store.sleepByDay
         VStack(alignment: .leading, spacing: 10) {
             SectionLabel(weekLabel(weekStart, start, today: today))
             HStack(spacing: 8) {
                 ForEach(days, id: \.self) { d in
-                    DayTile(day: d, summary: sums[d], style: .weekday, showBadge: store.settings.showBadges) { tap(d) }
+                    DayTile(day: d, summary: sums[d], style: .weekday, showBadge: store.settings.showBadges, sleep: nights[d]) { tap(d) }
                 }
             }
         }
@@ -204,6 +279,7 @@ struct MonthGridView: View {
     let tap: (String) -> Void
 
     var body: some View {
+        let nights = store.sleepByDay
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 ForEach(weekDays(first, start), id: \.self) { d in
@@ -218,7 +294,7 @@ struct MonthGridView: View {
                     HStack(spacing: 6) {
                         ForEach(0..<7, id: \.self) { c in
                             if let d = cells[r * 7 + c] {
-                                DayTile(day: d, summary: summaries[d], style: .number, showBadge: store.settings.showBadges) { tap(d) }
+                                DayTile(day: d, summary: summaries[d], style: .number, showBadge: store.settings.showBadges, sleep: nights[d]) { tap(d) }
                             } else {
                                 Color.clear.frame(maxWidth: .infinity).frame(height: DayTile.Style.number.height)
                             }

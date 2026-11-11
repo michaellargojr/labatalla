@@ -71,6 +71,7 @@ struct GoalEditorView: View {
     }
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             if prepared {
                 VStack(alignment: .leading, spacing: 26) {
@@ -79,24 +80,32 @@ struct GoalEditorView: View {
                         kindPicker
                         importanceBlock
                         if draft.kind == .time || draft.kind == .outcome { finishBlock }
-                        if draft.kind != .work { datesBlock }
-                        if draft.kind == .time { hoursBlock }
+                        if draft.kind != .work { datesBlock.id("dates") }
+                        if draft.kind == .time { hoursBlock.id("hours") }
                         if draft.kind == .adherence { whenBlock("When is it asked?", "A rule is asked every day it applies. No hours are counted.") }
-                        if draft.kind == .work { workBlock }
+                        if draft.kind == .work { workBlock.id("work") }
                     }
                     Group {
-                        if draft.kind != .adherence { pathBlock }
+                        if draft.kind != .adherence { pathBlock.id("path") }
                         relationsBlock
                         whyField
                         colorGrid
                         symbolGrid
-                        openBlock
+                        openBlock.id("open")
                         if !isNew { dangerZone }
                     }
                 }
                 .padding(16)
                 .padding(.bottom, 24)
             }
+        }
+        #if DEBUG
+        .onAppear {
+            if let a = DebugLaunch.anchor {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { proxy.scrollTo(a, anchor: .top) }
+            }
+        }
+        #endif
         }
         .scrollDismissesKeyboard(.interactively)
         .screen()

@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// In the order the bar shows them. Today is not a tab: the tile in the middle opens today's sheet.
-enum AppTab: Hashable { case calendar, goals, stats, settings }
+enum AppTab: Hashable { case calendar, goals, insights, settings }
 
-/// The floating bar: Calendar and Goals, the Today tile in the middle, then Progress and Settings.
+/// The floating bar: Calendar and Goals, the Today tile in the middle, then Insights and Settings.
 /// The tile is the one thing in the bar with color, so it is the one that calls you.
 struct BattleTabBar: View {
     @Environment(\.palette) private var p
@@ -18,7 +18,7 @@ struct BattleTabBar: View {
             item(.calendar, "Calendar", "calendar")
             item(.goals, "Goals", "flag.fill")
             TodayTile(action: onToday)
-            item(.stats, "Progress", "chart.bar.fill")
+            item(.insights, "Insights", "binoculars.fill")
             item(.settings, "Settings", "slider.horizontal.3")
         }
         .padding(.horizontal, 4)

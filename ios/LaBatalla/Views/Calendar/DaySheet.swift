@@ -42,6 +42,21 @@ struct DaySheet: View {
         .scrollDismissesKeyboard(.interactively)
         .sensoryFeedback(.success, trigger: s.badges.count) { old, new in store.settings.haptics && new > old }
         .sensoryFeedback(.impact(weight: .light), trigger: s.done.count) { _, _ in store.settings.haptics }
+        #if DEBUG
+        .onAppear {
+            // "-answer": answer the first goals of the day, so the open card can be looked at.
+            guard DebugLaunch.has("-answer"), open == nil else { return }
+            let due = store.summary(day).due
+            if let g = due.first(where: { $0.kind == .time }) {
+                store.answer(g.id, on: day, done: true)
+                open = g.id
+            }
+            if let g = due.first(where: { $0.kind == .adherence }) {
+                store.answer(g.id, on: day, done: false)
+                store.toggleReason("Tired", for: g.id, on: day)
+            }
+        }
+        #endif
         .sheet(isPresented: $sleeping) {
             SleepCheckInView(day: day)
                 .presentationDetents([.large])

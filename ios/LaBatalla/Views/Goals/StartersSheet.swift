@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Ideas: ready-made goals to tick and add. Each gets the next free color.
+/// Ideas: ready-made goals to tick and add, in two sorts: the ones that take hours and the
+/// rules that take none. Each gets the next free color.
 struct StartersSheet: View {
     @Environment(AppStore.self) private var store
     @Environment(\.palette) private var p
@@ -11,12 +12,13 @@ struct StartersSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Tick any. You can change the color, the days and the words after.")
+                    Text("Tick any. Each is added with its plan filled in; open it after to answer the rest of its questions: how important, by when, how clear the path is.")
                         .font(.system(size: 15)).foregroundStyle(p.secondary)
-                    ForEach(Horizon.allCases.reversed()) { h in
+                    ForEach([GoalKind.time, GoalKind.adherence]) { k in
                         VStack(alignment: .leading, spacing: 8) {
-                            SectionLabel("\(h.label)  \(h.title)")
-                            ForEach(Starters.all.filter { $0.horizon == h }) { s in row(s) }
+                            SectionLabel(k.label)
+                            Text(k.detail).font(.system(size: 13)).foregroundStyle(p.muted)
+                            ForEach(Starters.all.filter { $0.kind == k }) { s in row(s) }
                         }
                     }
                 }
@@ -55,7 +57,8 @@ struct StartersSheet: View {
                         Text(s.name).font(.system(size: 16, weight: .semibold)).foregroundStyle(p.text)
                         if already { Text("added").font(.system(size: 11, weight: .bold)).foregroundStyle(p.muted) }
                     }
-                    Text(s.schedule.label).font(.system(size: 12, weight: .semibold)).foregroundStyle(p.secondary)
+                    Text(s.kind == .time && s.minutes > 0 ? "\(s.schedule.label) - \(durationLabel(s.minutes))" : s.schedule.label)
+                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(p.secondary)
                     if !s.why.isEmpty {
                         Text(s.why).font(.system(size: 13)).foregroundStyle(p.muted).lineLimit(2).multilineTextAlignment(.leading)
                     }

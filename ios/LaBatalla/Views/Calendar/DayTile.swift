@@ -2,7 +2,8 @@ import SwiftUI
 
 /// One day. Filled with the colors of the goals marked that day, side by side, so a day with
 /// three goals done shows three bands; a day with none is a plain tile. Today has an outline.
-/// The small bolt, star or crown in the corner is the day's badge.
+/// The small bolt, star or crown in the corner is the day's badge, and the thin bar along the
+/// bottom is the night before: how much sleep, against the baseline.
 struct DayTile: View {
     /// Month tiles show the date; week tiles show the weekday over it.
     enum Style {
@@ -15,6 +16,9 @@ struct DayTile: View {
     let summary: DaySummary?
     let style: Style
     var showBadge: Bool = true
+    /// The night that ended on this day, if it was logged: drawn as a thin bar under the date,
+    /// as long as the sleep was against the baseline.
+    var sleep: SleepLog? = nil
     let tap: () -> Void
 
     var body: some View {
@@ -37,6 +41,20 @@ struct DayTile: View {
                     shape.fill(p.card)
                 }
                 label(lit: lit).foregroundStyle(fg)
+                if let sleep, sleep.needMinutes > 0 {
+                    let share = min(1, CGFloat(sleep.sleptMinutes) / CGFloat(sleep.needMinutes))
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 1.5, style: .continuous).fill(fg.opacity(0.22))
+                            RoundedRectangle(cornerRadius: 1.5, style: .continuous).fill(lit ? fg.opacity(0.85) : p.accent)
+                                .frame(width: geo.size.width * share)
+                        }
+                    }
+                    .frame(height: 3)
+                    .padding(.horizontal, 6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, 4)
+                }
                 if showBadge, let b = summary?.topBadge {
                     Image(systemName: b.symbol)
                         .font(.system(size: 8, weight: .heavy))
@@ -74,6 +92,7 @@ struct DayTile: View {
             words += ", " + s.done.map(\.name).joined(separator: ", ")
             if let b = s.topBadge { words += ", " + b.title }
         }
+        if let sleep { words += ", slept " + durationLabel(sleep.sleptMinutes) }
         return words
     }
 }
